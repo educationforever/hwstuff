@@ -1,4 +1,4 @@
-pwease checkout NautilusOS :3 it has Helios built in if u really wanna use it but it also has 2 other proxies n games and some other cool things
+ pwease checkout NautilusOS :3 it has Helios built in if u really wanna use it but it also has 2 other proxies n games and some other cool things
 https://github.com/nautilus-os/NautilusOS  
 thx i love u
 
