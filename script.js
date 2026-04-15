@@ -41,22 +41,36 @@
         localStorage.setItem('selectedTheme', theme);
     };
 
-    // --- 4. SEARCH HANDLER ---
+    // --- 4. PROXY SEARCH HANDLER (DuckDuckGo + UV) ---
     function handleSearch(query) {
         if (!query) return;
-        logEvent(`Navigating to: ${query}`);
+        logEvent(`Proxy routing initialized for: ${query}`);
         
-        // Check if it's a URL or a search term
-        let url = query;
-        if (!url.includes('.') || url.includes(' ')) {
-            url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-        } else if (!url.startsWith('http')) {
-            url = `https://${url}`;
+        let url = query.trim();
+        let targetUrl;
+
+        // 1. Determine if it's a website or a search query
+        if (url.includes('.') && !url.includes(' ')) {
+            // It's a website (e.g., discord.com)
+            targetUrl = url.startsWith('http') ? url : `https://${url}`;
+        } else {
+            // It's a search term, route it through DuckDuckGo
+            targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
         }
 
-        // If you are using Ultraviolet or Pyrus, you might need to prefix this:
-        // Example: window.location.href = "/service/" + btoa(url);
-        window.location.href = url; 
+        // 2. Encode and send through the Proxy
+        try {
+            // If standard Ultraviolet config is loaded in your HTML:
+            if (typeof __uv$config !== 'undefined') {
+                window.location.href = __uv$config.prefix + __uv$config.encodeUrl(targetUrl);
+            } else {
+                // Fallback: Manually route to the handler using standard base64 encoding
+                // If your proxy path isn't "/service/", change it here:
+                window.location.href = "/service/" + btoa(targetUrl);
+            }
+        } catch (err) {
+            logEvent("Proxy Error: Failed to encode URL.");
+        }
     }
 
     // --- 5. INITIALIZATION ---
