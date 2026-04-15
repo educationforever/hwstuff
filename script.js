@@ -1,8 +1,6 @@
 (function() {
     "use strict";
 
-    // --- 1. HELPER: THE LOGGING FUNCTION ---
-    // This fixes the "logEvent is not defined" error
     function logEvent(message, isError = false) {
         const container = document.getElementById('logContainer');
         if (container) {
@@ -10,66 +8,64 @@
             entry.style.color = isError ? '#ff4444' : '#00ff00';
             entry.textContent = `> ${message}`;
             container.prepend(entry);
-            
-            // Auto-remove logs after 5 seconds to keep it clean
             setTimeout(() => entry.remove(), 5000);
         }
-        console.log(message);
     }
 
-    // --- 2. THE SEARCH HANDLER ---
     window.handleSearch = function(query) {
         if (!query) return;
         
         let url = query.trim();
         let targetUrl;
 
-        // Routing logic
+        // 1. ROUTING LOGIC
         if (url.includes('.') && !url.includes(' ')) {
-            targetUrl = url.startsWith('http') ? url : `https://${url}`;
-            // Tunneling via DuckDuckGo Lite to bypass filters
-            targetUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(targetUrl)}`;
+            const cleanUrl = url.startsWith('http') ? url : `https://${url}`;
+            // Use DDG Lite as a proxy-like viewer
+            targetUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(cleanUrl)}`;
         } else {
-            targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
+            // Internal search results
+            targetUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(url)}`;
         }
 
-        logEvent(`Routing request...`);
+        const iframe = document.getElementById('content-frame');
+        const startPage = document.getElementById('start-page');
+        const addressBar = document.getElementById('url-baraa');
 
-        // Launch in stealth tab
-        const win = window.open('about:blank', '_blank');
-        
-        if (win) {
-            win.location.replace(targetUrl);
-            const addressBar = document.getElementById('url-baraa');
+        if (iframe && startPage) {
+            logEvent("Loading internal session...");
+            
+            // 2. SAME-TAB SWITCHING (Lunar v2 Style)
+            startPage.style.display = "none";
+            startPage.classList.remove('activeaa');
+            
+            iframe.style.display = "block";
+            iframe.src = targetUrl;
+
             if (addressBar) addressBar.value = url;
-        } else {
-            // Fallback for iPad
-            logEvent("Popup blocked. Redirecting current tab...", true);
-            window.location.href = targetUrl;
         }
     };
 
-    // --- 3. INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
         const mainSearch = document.getElementById('main-search');
-        
         if (mainSearch) {
             mainSearch.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    window.handleSearch(mainSearch.value);
-                }
+                if (e.key === 'Enter') window.handleSearch(mainSearch.value);
             });
         }
 
-        // Toggle AI Chatbot
-        const aiToggle = document.getElementById('toggleSourceCode');
-        if (aiToggle) {
-            aiToggle.addEventListener('click', () => {
-                document.body.classList.toggle('show-chatbot');
-            });
-        }
-        
+        // Return Home Logic
+        document.querySelector('.home-buttonaa')?.addEventListener('click', () => {
+            const iframe = document.getElementById('content-frame');
+            const startPage = document.getElementById('start-page');
+            if (iframe && startPage) {
+                iframe.style.display = "none";
+                iframe.src = "about:blank";
+                startPage.style.display = "flex";
+                startPage.classList.add('activeaa');
+            }
+        });
+
         logEvent("Helios System Ready.");
     });
-
 })();
