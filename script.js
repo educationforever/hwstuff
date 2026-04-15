@@ -1,39 +1,42 @@
 (function() {
     "use strict";
+    
+window.handleSearch = function(query) {
+    if (!query) return;
+    
+    let url = query.trim();
+    let targetUrl;
 
-    // --- 1. THE FAST SEARCH HANDLER ---
-    window.handleSearch = function(query) {
-        if (!query) return;
+    // 1. DUCKDUCKGO ROUTING
+    // If it's a URL (like google.com), we use DDG as a proxy to fetch it.
+    // If it's a search term, we use DDG HTML search.
+    if (url.includes('.') && !url.includes(' ')) {
+        // This is a "Redirect" trick via DuckDuckGo
+        targetUrl = url.startsWith('http') ? url : `https://${url}`;
+        targetUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(targetUrl)}`;
+    } else {
+        // Lightweight, unblockable search results
+        targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
+    }
+
+    logEvent(`Routing via DuckDuckGo Tunnel...`);
+
+    // 2. THE STEALTH TAB
+    // We open a new window to bypass "Refused to Connect" frame errors
+    const win = window.open('about:blank', '_blank');
+    
+    if (win) {
+        // We load the target through the DDG Lite interface
+        win.location.replace(targetUrl);
         
-        let url = query.trim();
-        let targetUrl;
-
-        // DuckDuckGo routing logic
-        if (url.includes('.') && !url.includes(' ')) {
-            targetUrl = url.startsWith('http') ? url : `https://${url}`;
-        } else {
-            // Force lightweight DuckDuckGo HTML search
-            targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
-        }
-
-        // The Google Tunnel (High-speed bypass for school filters)
-        // This uses Google's servers to fetch the site for you
-        const tunnel = `https://translate.google.com/translate?sl=en&tl=en&u=${encodeURIComponent(targetUrl)}`;
-
-        // Launch in a new stealth tab to avoid "Refused to Connect" errors
-        const win = window.open('about:blank', '_blank');
-        
-        if (win) {
-            win.location.replace(tunnel);
-            
-            // Sync the top address bar if it exists
-            const addressBar = document.getElementById('url-baraa');
-            if (addressBar) addressBar.value = targetUrl;
-        } else {
-            // Fallback: If iPad blocks popups, redirect the current tab
-            window.location.href = tunnel;
-        }
-    };
+        // Update the address bar in your Helios UI
+        const addressBar = document.getElementById('url-baraa');
+        if (addressBar) addressBar.value = url;
+    } else {
+        // Fallback for iPad if popups are disabled
+        window.location.href = targetUrl;
+    }
+};
 
     // --- 2. INITIALIZATION (The "Nothing Happens" Fix) ---
     document.addEventListener("DOMContentLoaded", () => {
