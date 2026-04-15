@@ -12,42 +12,49 @@
     
     const getApiKey = () => HELIOS_API_KEY_PARTS.filter(p => p !== 'X' && USELESS_CHARS.includes(p)).join('');
 
-    // --- 2. THE BYPASS HANDLER ---
-    window.handleSearch = function(query) {
-        if (!query) return;
+   window.handleSearch = function(query) {
+    if (!query) return;
+    
+    let url = query.trim();
+    let targetUrl;
+
+    // 1. Format URL or Search
+    if (url.includes('.') && !url.includes(' ')) {
+        targetUrl = url.startsWith('http') ? url : `https://${url}`;
+    } else {
+        targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+    }
+
+    /**
+     * 2. THE STEALTH POP-OUT
+     * Since iframes "refuse to connect" for security, we open the site
+     * in a new "About:Blank" tab. This is a classic proxy trick:
+     * It hides the URL from your history and bypasses frame restrictions.
+     */
+    const win = window.open();
+    if (win) {
+        win.document.body.style.margin = '0';
+        win.document.body.style.height = '100vh';
         
-        let url = query.trim();
-        let targetUrl;
-
-        // Determine if it's a URL or search
-        if (url.includes('.') && !url.includes(' ')) {
-            targetUrl = url.startsWith('http') ? url : `https://${url}`;
-        } else {
-            targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
-        }
-
-        const iframe = document.getElementById('content-frame');
-        const startPage = document.getElementById('start-page');
-        const addressBar = document.getElementById('url-baraa');
-
-        if (iframe && startPage) {
-            startPage.style.display = "none";
-            iframe.style.display = "block";
-            
-            /**
-             * THE TUNNEL LOGIC:
-             * We wrap the URL in Google Translate. 
-             * This bypasses DNS filters because the browser connects to GOOGLE, not a proxy.
-             */
-            const tunnel = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
-            
-            iframe.src = tunnel;
-            if (addressBar) addressBar.value = targetUrl;
-            
-            console.log("Helios: Routing through Google Tunnel...");
-        }
-    };
-
+        // We still use the Google Tunnel to get past your school's IP block
+        const tunnel = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
+        
+        const iframe = win.document.createElement('iframe');
+        iframe.style.border = 'none';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.margin = '0';
+        iframe.src = tunnel;
+        
+        win.document.body.appendChild(iframe);
+        
+        logEvent("Stealth tab launched.");
+    } else {
+        // Fallback if the iPad blocks the popup
+        location.href = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
+    }
+};
+    
     // --- 3. INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
         const mainSearch = document.getElementById('main-search');
