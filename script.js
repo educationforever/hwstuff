@@ -12,57 +12,43 @@
     
     const getApiKey = () => HELIOS_API_KEY_PARTS.filter(p => p !== 'X' && USELESS_CHARS.includes(p)).join('');
 
-   window.handleSearch = function(query) {
+  window.handleSearch = function(query) {
     if (!query) return;
     
     let url = query.trim();
     let targetUrl;
 
-    // 1. URL Formatting
+    // 1. FAST DUCKDUCKGO ROUTING
+    // If it's not a clear URL, we force it through DDG's HTML view (lighter/faster)
     if (url.includes('.') && !url.includes(' ')) {
         targetUrl = url.startsWith('http') ? url : `https://${url}`;
     } else {
-        targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+        targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
     }
 
-    // 2. The "History Hide" Popup trick
-    // This creates a clean window that bypasses most school "Refused" headers
-    const win = window.open('about:blank', '_blank');
-    if (!win) {
-        alert("Please allow popups for Helios to work!");
-        return;
-    }
+    logEvent(`Bypassing...`);
 
     /**
-     * 3. THE "FORCE LOAD" STRATEGY
-     * We use a CORS-anywhere bridge to grab the site data.
-     * This is much harder for schools to block than proxy IPs.
+     * 2. THE BLANK-TAB "FAST-PATH"
+     * Opening a new window first prevents "Frame Refusal" and is 
+     * significantly faster on iPad than injecting raw HTML code.
      */
-    const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl);
-
-    fetch(proxyUrl)
-        .then(response => {
-            if (response.ok) return response.json();
-            throw new Error('Network response was not ok.');
-        })
-        .then(data => {
-            // Write the site data directly into the new window
-            const doc = win.document;
-            doc.open();
-            
-            // We inject a Base tag so the site knows where to find its images/scripts
-            const baseTag = `<base href="${targetUrl}">`;
-            const content = data.contents.replace('<head>', `<head>${baseTag}`);
-            
-            doc.write(content);
-            doc.close();
-            
-            logEvent("Site successfully injected into stealth tab.");
-        })
-        .catch(err => {
-            // If the CORS bridge is blocked, we use the last-resort redirect
-            win.location.href = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
-        });
+    const win = window.open('about:blank', '_blank');
+    
+    if (win) {
+        // We use the DDG Proxy/Tunnel or Google's high-speed global cache
+        const fastTunnel = `https://translate.google.com/translate?sl=en&tl=en&u=${encodeURIComponent(targetUrl)}`;
+        
+        // This makes the transition instant
+        win.location.replace(fastTunnel);
+        
+        // Update your UI address bar to show we are moving
+        const addressBar = document.getElementById('url-baraa');
+        if (addressBar) addressBar.value = targetUrl;
+    } else {
+        // Fallback for iPad if popups are blocked
+        window.location.href = `https://translate.google.com/translate?sl=en&tl=en&u=${encodeURIComponent(targetUrl)}`;
+    }
 };
     
     // --- 3. INITIALIZATION ---
