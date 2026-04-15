@@ -41,36 +41,34 @@
         localStorage.setItem('selectedTheme', theme);
     };
 
-    // --- 4. PROXY SEARCH HANDLER (DuckDuckGo + UV) ---
+   // --- 4. STATIC PROXY HANDLER (Lunar Style) ---
     function handleSearch(query) {
         if (!query) return;
-        logEvent(`Proxy routing initialized for: ${query}`);
         
         let url = query.trim();
         let targetUrl;
 
-        // 1. Determine if it's a website or a search query
+        // 1. DuckDuckGo / URL Logic
         if (url.includes('.') && !url.includes(' ')) {
-            // It's a website (e.g., discord.com)
             targetUrl = url.startsWith('http') ? url : `https://${url}`;
         } else {
-            // It's a search term, route it through DuckDuckGo
+            // Force DuckDuckGo for searches
             targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
         }
 
-        // 2. Encode and send through the Proxy
-        try {
-            // If standard Ultraviolet config is loaded in your HTML:
-            if (typeof __uv$config !== 'undefined') {
-                window.location.href = __uv$config.prefix + __uv$config.encodeUrl(targetUrl);
-            } else {
-                // Fallback: Manually route to the handler using standard base64 encoding
-                // If your proxy path isn't "/service/", change it here:
-                window.location.href = "/service/" + btoa(targetUrl);
-            }
-        } catch (err) {
-            logEvent("Proxy Error: Failed to encode URL.");
-        }
+        logEvent(`Bypassing filters for: ${targetUrl}`);
+
+        /**
+         * 2. STATIC ENCODING
+         * Since your repo is HTML-only and doesn't have a local /service/ folder,
+         * we route it through a public UV gateway.
+         */
+        const proxyGateway = "https://uv.student-portal.top/main/"; // You can change this to any public UV instance
+        
+        // This encodes the URL the way Ultraviolet likes it
+        const encodedUrl = btoa(targetUrl).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
+        
+        window.location.href = proxyGateway + encodedUrl;
     }
 
     // --- 5. INITIALIZATION ---
