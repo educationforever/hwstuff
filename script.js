@@ -18,41 +18,51 @@
     let url = query.trim();
     let targetUrl;
 
-    // 1. Format URL or Search
+    // 1. URL Formatting
     if (url.includes('.') && !url.includes(' ')) {
         targetUrl = url.startsWith('http') ? url : `https://${url}`;
     } else {
         targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
     }
 
-    /**
-     * 2. THE STEALTH POP-OUT
-     * Since iframes "refuse to connect" for security, we open the site
-     * in a new "About:Blank" tab. This is a classic proxy trick:
-     * It hides the URL from your history and bypasses frame restrictions.
-     */
-    const win = window.open();
-    if (win) {
-        win.document.body.style.margin = '0';
-        win.document.body.style.height = '100vh';
-        
-        // We still use the Google Tunnel to get past your school's IP block
-        const tunnel = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
-        
-        const iframe = win.document.createElement('iframe');
-        iframe.style.border = 'none';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.margin = '0';
-        iframe.src = tunnel;
-        
-        win.document.body.appendChild(iframe);
-        
-        logEvent("Stealth tab launched.");
-    } else {
-        // Fallback if the iPad blocks the popup
-        location.href = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
+    // 2. The "History Hide" Popup trick
+    // This creates a clean window that bypasses most school "Refused" headers
+    const win = window.open('about:blank', '_blank');
+    if (!win) {
+        alert("Please allow popups for Helios to work!");
+        return;
     }
+
+    /**
+     * 3. THE "FORCE LOAD" STRATEGY
+     * We use a CORS-anywhere bridge to grab the site data.
+     * This is much harder for schools to block than proxy IPs.
+     */
+    const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(targetUrl);
+
+    fetch(proxyUrl)
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+            // Write the site data directly into the new window
+            const doc = win.document;
+            doc.open();
+            
+            // We inject a Base tag so the site knows where to find its images/scripts
+            const baseTag = `<base href="${targetUrl}">`;
+            const content = data.contents.replace('<head>', `<head>${baseTag}`);
+            
+            doc.write(content);
+            doc.close();
+            
+            logEvent("Site successfully injected into stealth tab.");
+        })
+        .catch(err => {
+            // If the CORS bridge is blocked, we use the last-resort redirect
+            win.location.href = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
+        });
 };
     
     // --- 3. INITIALIZATION ---
