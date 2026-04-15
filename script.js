@@ -41,36 +41,43 @@
         localStorage.setItem('selectedTheme', theme);
     };
 
-   // --- 4. STATIC PROXY HANDLER (Lunar Style) ---
-    function handleSearch(query) {
-        if (!query) return;
-        
-        let url = query.trim();
-        let targetUrl;
+  // --- PROXY SEARCH HANDLER ---
+function handleSearch(query) {
+    if (!query) return;
+    
+    let url = query.trim();
+    let targetUrl;
 
-        // 1. DuckDuckGo / URL Logic
-        if (url.includes('.') && !url.includes(' ')) {
-            targetUrl = url.startsWith('http') ? url : `https://${url}`;
-        } else {
-            // Force DuckDuckGo for searches
-            targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
-        }
-
-        logEvent(`Bypassing filters for: ${targetUrl}`);
-
-        /**
-         * 2. STATIC ENCODING
-         * Since your repo is HTML-only and doesn't have a local /service/ folder,
-         * we route it through a public UV gateway.
-         */
-        const proxyGateway = "https://uv.student-portal.top/main/"; // You can change this to any public UV instance
-        
-        // This encodes the URL the way Ultraviolet likes it
-        const encodedUrl = btoa(targetUrl).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
-        
-        window.location.href = proxyGateway + encodedUrl;
+    // 1. DuckDuckGo Logic
+    if (url.includes('.') && !url.includes(' ')) {
+        targetUrl = url.startsWith('http') ? url : `https://${url}`;
+    } else {
+        targetUrl = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
     }
 
+    // 2. The Gateway (UV Proxy)
+    const proxyGateway = "https://uv.student-portal.top/main/"; 
+    const encodedUrl = btoa(targetUrl).replace(/\//g, '_').replace(/\+/g, '-').replace(/=/g, '');
+    
+    // 3. UI Update (Hide landing page, show iframe)
+    const iframe = document.getElementById('content-frame');
+    const startPage = document.getElementById('start-page');
+    const addressBar = document.getElementById('url-baraa');
+
+    if (iframe && startPage) {
+        startPage.style.display = "none"; // Hide the big Helios logo
+        iframe.style.display = "block";  // Show the website
+        iframe.src = proxyGateway + encodedUrl;
+        
+        if (addressBar) addressBar.value = targetUrl; // Update the bar with the real URL
+    }
+}
+
+// Add the listener for the new ID
+document.getElementById('main-search')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSearch(e.target.value);
+});
+    
     // --- 5. INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
         const searchInput = document.querySelector('.search-baraa input');
