@@ -1,72 +1,75 @@
 (function() {
     "use strict";
-    
-window.handleSearch = function(query) {
-    if (!query) return;
-    
-    let url = query.trim();
-    let targetUrl;
 
-    // 1. DUCKDUCKGO ROUTING
-    // If it's a URL (like google.com), we use DDG as a proxy to fetch it.
-    // If it's a search term, we use DDG HTML search.
-    if (url.includes('.') && !url.includes(' ')) {
-        // This is a "Redirect" trick via DuckDuckGo
-        targetUrl = url.startsWith('http') ? url : `https://${url}`;
-        targetUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(targetUrl)}`;
-    } else {
-        // Lightweight, unblockable search results
-        targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
+    // --- 1. HELPER: THE LOGGING FUNCTION ---
+    // This fixes the "logEvent is not defined" error
+    function logEvent(message, isError = false) {
+        const container = document.getElementById('logContainer');
+        if (container) {
+            const entry = document.createElement('div');
+            entry.style.color = isError ? '#ff4444' : '#00ff00';
+            entry.textContent = `> ${message}`;
+            container.prepend(entry);
+            
+            // Auto-remove logs after 5 seconds to keep it clean
+            setTimeout(() => entry.remove(), 5000);
+        }
+        console.log(message);
     }
 
-    logEvent(`Routing via DuckDuckGo Tunnel...`);
-
-    // 2. THE STEALTH TAB
-    // We open a new window to bypass "Refused to Connect" frame errors
-    const win = window.open('about:blank', '_blank');
-    
-    if (win) {
-        // We load the target through the DDG Lite interface
-        win.location.replace(targetUrl);
+    // --- 2. THE SEARCH HANDLER ---
+    window.handleSearch = function(query) {
+        if (!query) return;
         
-        // Update the address bar in your Helios UI
-        const addressBar = document.getElementById('url-baraa');
-        if (addressBar) addressBar.value = url;
-    } else {
-        // Fallback for iPad if popups are disabled
-        window.location.href = targetUrl;
-    }
-};
+        let url = query.trim();
+        let targetUrl;
 
-    // --- 2. INITIALIZATION (The "Nothing Happens" Fix) ---
+        // Routing logic
+        if (url.includes('.') && !url.includes(' ')) {
+            targetUrl = url.startsWith('http') ? url : `https://${url}`;
+            // Tunneling via DuckDuckGo Lite to bypass filters
+            targetUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(targetUrl)}`;
+        } else {
+            targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
+        }
+
+        logEvent(`Routing request...`);
+
+        // Launch in stealth tab
+        const win = window.open('about:blank', '_blank');
+        
+        if (win) {
+            win.location.replace(targetUrl);
+            const addressBar = document.getElementById('url-baraa');
+            if (addressBar) addressBar.value = url;
+        } else {
+            // Fallback for iPad
+            logEvent("Popup blocked. Redirecting current tab...", true);
+            window.location.href = targetUrl;
+        }
+    };
+
+    // --- 3. INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
-        // Find your search input by its ID
         const mainSearch = document.getElementById('main-search');
         
         if (mainSearch) {
-            // Listen for the Enter key
             mainSearch.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     window.handleSearch(mainSearch.value);
                 }
             });
-            
-            // Optional: Support Ctrl + K to focus search
-            window.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === 'k') {
-                    e.preventDefault();
-                    mainSearch.focus();
-                }
-            });
         }
 
-        // Toggle Helios AI Bot
+        // Toggle AI Chatbot
         const aiToggle = document.getElementById('toggleSourceCode');
         if (aiToggle) {
             aiToggle.addEventListener('click', () => {
                 document.body.classList.toggle('show-chatbot');
             });
         }
+        
+        logEvent("Helios System Ready.");
     });
 
 })();
