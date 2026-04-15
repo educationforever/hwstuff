@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Research</title>
     
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
@@ -22,6 +23,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <style>
+        /* Hidden by default, toggled by script.js */
         #content-frame {
             position: fixed;
             top: 110px; 
@@ -34,6 +36,7 @@
             z-index: 5;
         }
 
+        /* Search Landing Page Centering */
         .contentaa.activeaa {
             display: flex;
             flex-direction: column;
@@ -46,6 +49,11 @@
             width: 24px;
             height: 24px;
             object-fit: contain;
+        }
+
+        /* Prevent chatbot from overlapping UI too much */
+        .show-chatbot .chatbot {
+            display: block;
         }
     </style>
 </head>
@@ -87,11 +95,11 @@
     </div>
 
     <iframe 
-    id="content-frame" 
-    sandbox="allow-forms allow-scripts allow-popups allow-modals allow-same-origin allow-top-navigation" 
-    allow="fullscreen"
-    src="about:blank">
-</iframe>
+        id="content-frame" 
+        sandbox="allow-forms allow-scripts allow-popups allow-modals allow-same-origin allow-top-navigation" 
+        allow="fullscreen; clipboard-read; clipboard-write"
+        src="about:blank">
+    </iframe>
     
     <div class="contentaa tab-contentaa activeaa" id="start-page">
         <div class="Xt7Lm9Kp3R8f">
@@ -126,7 +134,7 @@
         </div>
     </div>
 
-    <div id="logContainer" style="position:fixed; bottom:10px; right:10px; color:lime; font-family:monospace; pointer-events:none; font-size:10px;"></div>
+    <div id="logContainer" style="position:fixed; bottom:10px; right:10px; color:lime; font-family:monospace; pointer-events:none; font-size:10px; z-index: 100;"></div>
 
     <script src="script.js"></script>
 </body>
