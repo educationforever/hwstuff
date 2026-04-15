@@ -34,12 +34,19 @@
         container.scrollTop = container.scrollHeight;
     }
 
-    // --- 3. THEME & UI ---
-    window.activatePreview = function(element) {
-        const theme = element.classList.contains('theme-preview-lightmode') ? 'dark-ember.css' : 'styles.css';
-        document.querySelector('link[rel="stylesheet"]').href = theme;
-        localStorage.setItem('selectedTheme', theme);
-    };
+   // 3. UI Update (The "Cleaner" way for Chrome)
+    const iframe = document.getElementById('content-frame');
+    const startPage = document.getElementById('start-page');
+
+    if (iframe && startPage) {
+        startPage.style.display = "none";
+        iframe.style.display = "block";
+        
+        // Instead of iframe.src = ..., use this to bypass some Chrome security checks:
+        iframe.contentWindow.location.replace(proxyGateway + encodedUrl);
+        
+        logEvent("Handshake established with gateway.");
+    }
 
   // --- PROXY SEARCH HANDLER ---
 function handleSearch(query) {
