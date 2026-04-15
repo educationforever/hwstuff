@@ -1,6 +1,7 @@
 (function() {
     "use strict";
 
+    // --- 1. SYSTEM LOGGING ---
     function logEvent(message, isError = false) {
         const container = document.getElementById('logContainer');
         if (container) {
@@ -10,19 +11,31 @@
             container.prepend(entry);
             setTimeout(() => entry.remove(), 5000);
         }
+        console.log(message);
     }
 
+    // --- 2. MINI-SERVER (SERVICE WORKER) REGISTRATION ---
+    // This installs the proxy logic into the browser tab
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => logEvent("Helios Mini-Server Active."))
+                .catch(err => logEvent("Mini-Server Failed to start.", true));
+        });
+    }
+
+    // --- 3. THE LUNAR-STYLE SEARCH HANDLER ---
     window.handleSearch = function(query) {
         if (!query) return;
         
         let url = query.trim();
         let targetUrl;
 
-        // 1. DUCKDUCKGO ROUTING
+        // URL vs Search Logic
         if (url.includes('.') && !url.includes(' ')) {
             targetUrl = url.startsWith('http') ? url : `https://${url}`;
         } else {
-            // Use DuckDuckGo HTML (the lightweight version)
+            // Use DuckDuckGo HTML for faster unblocking
             targetUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(url)}`;
         }
 
@@ -31,35 +44,40 @@
         const addressBar = document.getElementById('url-baraa');
 
         if (iframe && startPage) {
-            logEvent("Switching to internal view...");
+            logEvent("Intercepting request...");
 
-            // 2. THE GOOGLE MIRROR TUNNEL
-            // This is the most stable way to stay in the same tab.
-            // sl=en (source language) and tl=en (target language)
-            const proxyBridge = `https://translate.google.com/translate?sl=en&tl=en&u=${encodeURIComponent(targetUrl)}`;
+            /**
+             * THE PROXY PATH
+             * We tell the browser to stay on OUR domain but add a special prefix.
+             * The Service Worker (sw.js) listens for this prefix and tunnels the data.
+             */
+            const proxiedPath = window.location.origin + '/helios-proxy=' + encodeURIComponent(targetUrl);
             
-            // UI Transition
+            // UI Transition: Hide landing, show frame
             startPage.style.display = "none";
-            iframe.style.display = "block";
+            startPage.classList.remove('activeaa');
             
-            // Set the source
-            iframe.src = proxyBridge;
+            iframe.style.display = "block";
+            iframe.src = proxiedPath;
 
             if (addressBar) addressBar.value = url;
         }
     };
 
+    // --- 4. INITIALIZATION & EVENT LISTENERS ---
     document.addEventListener("DOMContentLoaded", () => {
         const mainSearch = document.getElementById('main-search');
+        
+        // Enter Key Listener
         if (mainSearch) {
             mainSearch.addEventListener('keydown', (e) => {
-                if (e.key === "Enter") {
+                if (e.key === 'Enter') {
                     window.handleSearch(mainSearch.value);
                 }
             });
         }
 
-        // Fix Home Button
+        // Home Button Fix: Reset to landing page
         document.querySelector('.home-buttonaa')?.addEventListener('click', () => {
             const iframe = document.getElementById('content-frame');
             const startPage = document.getElementById('start-page');
@@ -67,9 +85,20 @@
                 iframe.style.display = "none";
                 iframe.src = "about:blank";
                 startPage.style.display = "flex";
+                startPage.classList.add('activeaa');
+                logEvent("Returned Home.");
             }
         });
 
-        logEvent("Helios System Active.");
+        // AI Bot Toggle
+        const aiToggle = document.getElementById('toggleSourceCode');
+        if (aiToggle) {
+            aiToggle.addEventListener('click', () => {
+                document.body.classList.toggle('show-chatbot');
+            });
+        }
+
+        logEvent("Helios Engine Initialized.");
     });
+
 })();
