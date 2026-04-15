@@ -22,7 +22,6 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <style>
-        /* This keeps the UI fixed at the top and the proxy content below it */
         #content-frame {
             position: fixed;
             top: 110px; 
@@ -30,12 +29,11 @@
             width: 100%;
             height: calc(100vh - 110px);
             border: none;
-            display: none; /* Hidden until search */
+            display: none; 
             background: white;
             z-index: 5;
         }
 
-        /* Ensures the search landing page stays visible until search */
         .contentaa.activeaa {
             display: flex;
             flex-direction: column;
@@ -44,7 +42,6 @@
             height: calc(100vh - 110px);
         }
 
-        /* Fix for the Google Favicon 404 */
         #selected-engineaa {
             width: 24px;
             height: 24px;
@@ -102,7 +99,7 @@
         <div class="search-baraa">
             <div class="search-containeraa">
                 <div class="search-engine-dropdownaa" onclick="toggleDropdown()">
-                    <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" alt="Google" id="selected-engineaa">
+                    <img src="https://duckduckgo.com/favicon.ico" alt="DuckDuckGo" id="selected-engineaa">
                 </div>
                 <div class="dropdown-contentaa" id="engineDropdownaa">
                     <a href="javascript:void(0);" onclick="selectEngine('Google')">Google</a>
@@ -110,8 +107,8 @@
                 </div>
             </div>
             
-            <input type="text" id="main-search" placeholder="Search the web or enter a URL [Ctrl + K]">
-            <i class="fas fa-search search-iconaa"></i>
+            <input type="text" id="main-search" placeholder="Search unblocked via DuckDuckGo...">
+            <i class="fas fa-search search-iconaa" onclick="window.handleSearch(document.getElementById('main-search').value)"></i>
         </div>
     </div>
 
