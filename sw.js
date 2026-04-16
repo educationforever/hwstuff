@@ -1,30 +1,34 @@
 // Helios Master Proxy (sw.js)
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYl1gLswvLofvow05jLej8dICLIXQ181vuVyEjHR8M7x7A7emYlZkiPGlcOzk1B419/exec';
+// PASTE YOUR NEW GOOGLE URL BELOW
+const GOOGLE_SCRIPT_URL = 'PASTE_YOUR_NEW_URL_HERE';
 
 async function tryFetch(actualUrl) {
     try {
-        // Construct the request to your private Google bridge
         const target = GOOGLE_SCRIPT_URL + '?url=' + encodeURIComponent(actualUrl);
 
-        // We use 'cors' mode and allow redirects for Google Apps Script
+        // We use 'no-referrer' to keep Securly from seeing the target site
         const response = await fetch(target, {
             method: 'GET',
-            redirect: 'follow' 
+            mode: 'cors', 
+            credentials: 'omit'
         });
+
+        if (!response.ok) throw new Error('Network response was not ok');
 
         const html = await response.text();
         
         const newHeaders = new Headers();
         newHeaders.set('Content-Type', 'text/html');
 
-        // Injection to keep the user inside the Helios tab
+        // This keeps you in the tab
         const injection = `
             <script>
                 document.addEventListener('click', e => {
                     const a = e.target.closest('a');
                     if (a && a.href && a.href.startsWith('http')) {
                         e.preventDefault();
-                        window.location.href = window.location.origin + '/helios-proxy=' + encodeURIComponent(a.href);
+                        const proxied = window.location.origin + '/helios-proxy=' + encodeURIComponent(a.href);
+                        window.location.href = proxied;
                     }
                 });
             </script>
@@ -36,7 +40,8 @@ async function tryFetch(actualUrl) {
         });
 
     } catch (err) {
-        return new Response("<h1>Helios Bridge Error</h1><p>" + err.toString() + "</p>", {
+        // Fallback for when the Google Script is struggling
+        return new Response("<h1>Helios Bridge Error</h1><p>The bridge failed to load. Ensure you updated the URL in sw.js and set access to 'Anyone'.</p><p>Error: " + err.message + "</p>", {
             headers: { 'Content-Type': 'text/html' }
         });
     }
