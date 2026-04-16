@@ -1,5 +1,5 @@
 // Helios Mini-Server (sw.js)
-const PROXY_PREFIX = 'https://corsproxy.io/?';
+const PROXY_PREFIX = 'https://api.codetabs.com/v1/proxy?quest=';
 
 self.addEventListener('fetch', (event) => {
     const url = event.request.url;
@@ -10,23 +10,33 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             fetch(PROXY_PREFIX + encodeURIComponent(actualUrl))
                 .then(response => {
-                    // We clone the response to modify the headers
                     const newHeaders = new Headers(response.headers);
                     
-                    // CRITICAL: Strip the security headers that block iframes
+                    // Kill the blockers
                     newHeaders.delete('X-Frame-Options');
                     newHeaders.delete('content-security-policy');
+                    // Add HTML content type just in case the proxy strips it
+                    newHeaders.set('Content-Type', 'text/html');
 
                     return response.text().then(html => {
-                        return new Response(html, {
-                            status: response.status,
-                            statusText: response.statusText,
+                        // Injection: This script ensures links inside the proxied page 
+                        // also go through Helios instead of breaking out.
+                        const injectedCode = `
+                            <script>
+                                document.querySelectorAll('a').forEach(link => {
+                                    link.href = window.location.origin + '/helios-proxy=' + encodeURIComponent(link.href);
+                                });
+                            </script>
+                        `;
+                        
+                        return new Response(html + injectedCode, {
+                            status: 200,
                             headers: newHeaders
                         });
                     });
                 })
                 .catch(err => {
-                    return new Response("<h1>Helios Proxy Error</h1><p>The bridge is currently congested. Try again in a moment.</p>", {
+                    return new Response("<h1>Helios Tunnel Offline</h1><p>The bridge is refusing the connection. Try a different URL.</p>", {
                         headers: { 'Content-Type': 'text/html' }
                     });
                 })
