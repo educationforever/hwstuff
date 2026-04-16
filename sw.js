@@ -1,5 +1,5 @@
 // Helios Master Proxy (sw.js)
-const GOOGLE_SCRIPT_URL = 'PASTE_YOUR_NEW_URL_HERE'; 
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXe7jdnM0iwkL3Q2RoO9RyUcr8kHTbsEkwGW2m2yA/dev'; 
 
 async function tryFetch(actualUrl) {
     try {
