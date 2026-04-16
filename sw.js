@@ -1,24 +1,29 @@
-// Helios Private Tunnel (sw.js)
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycVJNOkez6L7h3B_jDwbVzZIh11qfFGAzFMwAEysdlulEKhj1jQxUGpG1Tu_xrlqjQ/exec'; // Ends in /exec
+// Helios Master Proxy (sw.js)
+const GOOGLE_SCRIPT_URL = 'PASTE_YOUR_NEW_URL_HERE'; 
 
 async function tryFetch(actualUrl) {
     try {
         const target = GOOGLE_SCRIPT_URL + '?url=' + encodeURIComponent(actualUrl);
 
-        // We use 'follow' to handle the Google Apps Script redirect
-        // and 'cors' mode to ensure the browser allows the data through
+        // 'no-cors' allows the fetch to happen even if Securly/iPad is blocking headers
         const response = await fetch(target, {
             method: 'GET',
-            redirect: 'follow',
-            mode: 'cors'
+            mode: 'no-cors', 
+            redirect: 'follow'
         });
 
-        // Check if the response actually made it
-        if (!response.ok) {
-            throw new Error(`Bridge responded with status ${response.status}`);
+        /** * With no-cors, we get back an 'opaque' response. 
+         * If the opaque fetch fails, we try the standard fetch as a backup.
+         */
+        let html;
+        if (response.type === 'opaque') {
+            // Since we can't read 'opaque' text directly, we have to refetch 
+            // via a proxy-in-a-proxy or assume the bridge is up.
+            const backupResponse = await fetch(target);
+            html = await backupResponse.text();
+        } else {
+            html = await response.text();
         }
-
-        const html = await response.text();
         
         const newHeaders = new Headers();
         newHeaders.set('Content-Type', 'text/html');
@@ -41,20 +46,9 @@ async function tryFetch(actualUrl) {
         });
 
     } catch (err) {
-        // This is what you see if the iPad blocks the fetch
-        return new Response(\`
-            <div style="color:white; background:#111; padding:20px; font-family:sans-serif;">
-                <h1>Helios Tunnel Error</h1>
-                <p>Status: \${err.message}</p>
-                <hr>
-                <p><b>Checklist:</b></p>
-                <ul>
-                    <li>Does your URL end in /exec?</li>
-                    <li>Did you click "Deploy" > "New Deployment" after every code change?</li>
-                    <li>Is access set to "Anyone" (NOT "Anyone with Google Account")?</li>
-                </ul>
-            </div>
-        \`, { headers: { 'Content-Type': 'text/html' } });
+        return new Response('<div style="color:red; background:black; padding:20px;"><h1>Tunnel Error</h1><p>' + err.message + '</p></div>', {
+            headers: { 'Content-Type': 'text/html' }
+        });
     }
 }
 
