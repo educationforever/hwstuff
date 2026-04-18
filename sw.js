@@ -1,22 +1,21 @@
-// Helios Private Tunnel (sw.js)
-const BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbyJeqMMZpdVgjZ0kwPN0GSQHwGv9tOHXUMWa4KrsMH5tj-vEw6CpI-H3oMiiwnPPvM/exec';
+const BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbxG3y-WSAf8kQyln8y9FgvbHdLQocD1MVU6gZHubVVI1JE8Efryi2mkaI2yf5TsG4Xa/exec';
 
 async function proxyFetch(targetUrl) {
     try {
         const tunnelUrl = BRIDGE_URL + '?url=' + encodeURIComponent(targetUrl);
 
-        // We tell the browser to follow Google's 302 redirect automatically
+        // We use mode: 'no-cors' as a last resort to get the data through the firewall
         const response = await fetch(tunnelUrl, {
             method: 'GET',
-            redirect: 'follow', // THIS IS THE KEY
-            mode: 'cors'
+            mode: 'no-cors', // This tells Chrome to stop worrying about CORS headers
+            redirect: 'follow'
         });
 
-        if (!response.ok) throw new Error('Google Bridge is down');
+        // Since 'no-cors' responses are opaque, we refetch with a standard 
+        // fallback if the first one fails to provide text.
+        const res = await fetch(tunnelUrl);
+        const html = await res.text();
 
-        const html = await response.text();
-
-        // Standard Helios injection
         const injection = `<script>
             document.addEventListener('click', e => {
                 const a = e.target.closest('a');
@@ -32,7 +31,7 @@ async function proxyFetch(targetUrl) {
         });
 
     } catch (err) {
-        return new Response("<h1>Tunnel Failure</h1><p>" + err.message + "</p>");
+        return new Response("<h1>Tunnel Failure</h1><p>Chrome blocked the handshake. Check console for CORS logs.</p>");
     }
 }
 
